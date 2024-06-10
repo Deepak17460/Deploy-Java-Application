@@ -38,6 +38,9 @@ jobs:
     needs: build
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Download WAR file
         uses: actions/download-artifact@v2
         with:
@@ -51,7 +54,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/java:${{ github.sha }} .
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/java:${{ github.sha }} -f Dockerfile .
         
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/java:${{ github.sha }}
