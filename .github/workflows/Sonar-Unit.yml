@@ -1,4 +1,4 @@
-name: Build,Sonar and Push
+name: Build, Unit & Docker
 
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ jobs:
         run: mvn clean package
 
   unit_test:
-    name: Unit Test
+    name: Unit Test and Code Coverage
     runs-on: self-hosted
     needs: maven_build
     steps:
@@ -39,14 +39,23 @@ jobs:
           distribution: 'adopt'
           java-version: '17'
 
-      - name: Run unit tests
-        run: mvn test
+      - name: Add Maven to PATH
+        run: echo "/opt/maven/bin" >> $GITHUB_PATH
 
-      - name: Generate test report
-        run: mvn surefire-report:report
+      - name: Maven Unit Test
+        run: mvn test jacoco:report
 
-      - name: Generate code coverage report
-        run: mvn jacoco:report
+      - name: Archive Test Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: target/surefire-reports
+
+      - name: Archive JaCoCo Code Coverage Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
 
   upload_to_artifactory:
     name: Upload to Artifactory
