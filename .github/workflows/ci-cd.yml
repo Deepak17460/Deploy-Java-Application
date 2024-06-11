@@ -1,17 +1,12 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build with Maven
-    runs-on: ubuntu-latest
+    name: Maven Build
+    runs-on: self-hosted
     
     steps:
       - name: Checkout code
@@ -22,19 +17,22 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: '17'
+
+      - name: Add Maven to PATH
+        run: echo "/opt/maven/bin" >> $GITHUB_PATH
           
-      - name: Build with Maven
-        run: mvn clean install
+      - name: Maven Clean Package
+        run: mvn clean package
         
       - name: Upload WAR file
         uses: actions/upload-artifact@v2
         with:
           name: war-file
-          path: target/CalculatorMvcProject.war
+          path: target/*.war
 
-  docker:
-    name: Build and Push Docker Image
-    runs-on: ubuntu-latest
+  docker_build_and_push:
+    name: Docker Build and Push
+    runs-on: self-hosted
     needs: build
     
     steps:
@@ -54,7 +52,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/java:${{ github.sha }} -f Dockerfile .
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/java-app:${{ github.run_number }} .
         
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/java:${{ github.sha }}
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/java-app:${{ github.run_number }}
