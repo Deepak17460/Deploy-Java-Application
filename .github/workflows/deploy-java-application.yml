@@ -1,12 +1,6 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -23,6 +17,9 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: '17'
+
+      - name: Add Maven to PATH
+        run: echo "/opt/maven/bin" >> $GITHUB_PATH
           
       - name: Maven Clean Package
         run: mvn clean package
