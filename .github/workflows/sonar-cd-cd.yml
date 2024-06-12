@@ -6,14 +6,14 @@ on:
 jobs:
   checkout:
     name: Checkout
-    runs-on: self-hosted
+    runs-on: dpcode
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
   maven_build:
     name: Maven Build
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: checkout
     steps:
       - name: Set up JDK 17
