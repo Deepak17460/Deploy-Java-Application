@@ -1,0 +1,138 @@
+name: Build, Unit & Docker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  checkout:
+    name: Checkout
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+  maven_build:
+    name: Maven Build
+    runs-on: self-hosted
+    needs: checkout
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Add Maven to PATH
+        run: echo "/opt/maven/bin" >> $GITHUB_PATH
+
+      - name: Maven Clean Package
+        run: mvn clean package
+
+  unit_test:
+    name: Unit Test and Code Coverage
+    runs-on: self-hosted
+    needs: maven_build
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Add Maven to PATH
+        run: echo "/opt/maven/bin" >> $GITHUB_PATH
+
+      - name: Maven Unit Test
+        run: mvn test jacoco:report
+
+      - name: Archive Test Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: target/surefire-reports
+
+      - name: Archive JaCoCo Code Coverage Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
+
+  sonar_scan:
+    name: SonarQube Scan
+    runs-on: self-hosted
+    needs: unit_test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Add Maven to PATH
+        run: echo "/opt/maven/bin" >> $GITHUB_PATH
+
+      - name: Run SonarQube Scan
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_LOGIN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn sonar:sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_LOGIN
+
+  quality_gate:
+    name: Check Quality Gate
+    runs-on: self-hosted
+    needs: sonar_scan
+    steps:
+      - name: Quality Gate Status
+        id: quality_gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        with:
+          sonar_host_url: ${{ secrets.SONAR_HOST_URL }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
+
+  upload_to_artifactory:
+    name: Upload to Artifactory
+    runs-on: self-hosted
+    needs: quality_gate
+    steps:
+      - name: Publish WAR to Artifactory
+        env:
+          ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL }}
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        run: |
+          curl -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD \
+               -T target/*.war \
+               "$ARTIFACTORY_URL/com.nagarro.dpcode/binaries/$(basename target/*.war)"
+
+  docker_build:
+    name: Docker Image Build
+    runs-on: self-hosted
+    needs: upload_to_artifactory
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Add any additional setup steps here
+
+      - name: Build Docker image
+        run: |
+          docker build --build-arg ARTIFACTORY_USERNAME=${{ secrets.ARTIFACTORY_USERNAME }} \
+                       --build-arg ARTIFACTORY_PASSWORD=${{ secrets.ARTIFACTORY_PASSWORD }} \
+                       -t ${{ secrets.DOCKER_USERNAME }}/java-app:${{ github.run_number }} .
+
+  docker_push:
+    name: Docker Image Push
+    runs-on: self-hosted
+    needs: docker_build
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/java-app:${{ github.run_number }}
