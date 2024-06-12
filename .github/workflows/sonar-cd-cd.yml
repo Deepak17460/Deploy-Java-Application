@@ -1,4 +1,4 @@
-name: Build, Unit & Docker
+name: Build, Unit, Sonar & Docker
 
 on:
   workflow_dispatch:
@@ -6,14 +6,14 @@ on:
 jobs:
   checkout:
     name: Checkout
-    runs-on: self-hosted
+    runs-on: dpcode
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
   maven_build:
     name: Maven Build
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: checkout
     steps:
       - name: Set up JDK 17
@@ -30,7 +30,7 @@ jobs:
 
   unit_test:
     name: Unit Test and Code Coverage
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: maven_build
     steps:
       - name: Set up JDK 17
@@ -59,7 +59,7 @@ jobs:
 
   sonar_scan:
     name: SonarQube Scan
-    runs-on: self-hosted
+    runs-on: dpcode-1
     needs: unit_test
     steps:
       - name: Checkout code
@@ -82,7 +82,7 @@ jobs:
 
   quality_gate:
     name: Check Quality Gate
-    runs-on: self-hosted
+    runs-on: dpcode-1
     needs: sonar_scan
     steps:
       - name: Quality Gate Status
@@ -94,7 +94,7 @@ jobs:
 
   upload_to_artifactory:
     name: Upload to Artifactory
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: quality_gate
     steps:
       - name: Publish WAR to Artifactory
@@ -109,7 +109,7 @@ jobs:
 
   docker_build:
     name: Docker Image Build
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: upload_to_artifactory
     steps:
       - name: Checkout code
@@ -125,7 +125,7 @@ jobs:
 
   docker_push:
     name: Docker Image Push
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: docker_build
     steps:
       - name: Log in to Docker Hub
