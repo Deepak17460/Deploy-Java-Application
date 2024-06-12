@@ -30,7 +30,7 @@ jobs:
 
   unit_test:
     name: Unit Test and Code Coverage
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: maven_build
     steps:
       - name: Set up JDK 17
@@ -94,7 +94,7 @@ jobs:
 
   upload_to_artifactory:
     name: Upload to Artifactory
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: quality_gate
     steps:
       - name: Publish WAR to Artifactory
@@ -109,13 +109,11 @@ jobs:
 
   docker_build:
     name: Docker Image Build
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: upload_to_artifactory
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      # Add any additional setup steps here
 
       - name: Build Docker image
         run: |
@@ -125,7 +123,7 @@ jobs:
 
   docker_push:
     name: Docker Image Push
-    runs-on: self-hosted
+    runs-on: dpcode
     needs: docker_build
     steps:
       - name: Log in to Docker Hub
