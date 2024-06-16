@@ -74,13 +74,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Add Maven to PATH
+        run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
+
       - name: Sonar Analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           mvn clean verify sonar:sonar \
-          -Dsonar.projectKey==Calculator \
+          -Dsonar.projectKey=calculator-mvc \
           -Dsonar.sources=src/main/java \
           -Dsonar.tests=src/test/java \
           -Dsonar.java.binaries=target/classes \
