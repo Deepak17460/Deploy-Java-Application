@@ -1,0 +1,90 @@
+name: Java-Build & Docker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  checkout:
+    name: Checkout
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+  maven_build:
+    name: Maven Build
+    runs-on: self-hosted
+    needs: checkout
+    env:
+      M2_HOME: /opt/apache-maven-3.9.7
+      MAVEN_HOME: /opt/apache-maven-3.9.7
+      PATH: /opt/apache-maven-3.9.7/bin:$PATH
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Maven Clean Package
+        run: mvn clean package
+
+  unit_test:
+    name: Unit Test
+    runs-on: self-hosted
+    needs: maven_build
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Maven Unit Test
+        run: mvn test
+
+  upload_to_artifactory:
+    name: Upload to Artifactory
+    runs-on: self-hosted
+    needs: unit_test
+    steps:
+      - name: Publish WAR to Artifactory
+        env:
+          ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL }}
+          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        run: |
+          curl -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD \
+               -T target/*.war \
+               "$ARTIFACTORY_URL/com.DevOps.pipeline//binaries/$(basename target/*.war)"
+
+  docker_build:
+    name: Docker Image Build
+    runs-on: self-hosted
+    needs: upload_to_artifactory
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: |
+          docker build --build-arg ARTIFACTORY_USERNAME=${{ secrets.ARTIFACTORY_USERNAME }} \
+                       --build-arg ARTIFACTORY_PASSWORD=${{ secrets.ARTIFACTORY_PASSWORD }} \
+                       -t ${{ secrets.DOCKER_USERNAME }}/java-app:${{ github.run_number }} .
+
+  docker_push:
+    name: Docker Image Push
+    runs-on: self-hosted
+    needs: docker_build
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/java-app:${{ github.run_number }}
