@@ -1,4 +1,4 @@
-name: dpcode
+name: dpcode & bajrangbali
 
 on:
   workflow_dispatch:
