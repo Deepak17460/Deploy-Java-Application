@@ -1,4 +1,4 @@
-name: Build, Unit & Docker
+name: dpcode
 
 on:
   workflow_dispatch:
