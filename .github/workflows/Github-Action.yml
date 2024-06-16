@@ -67,7 +67,7 @@ jobs:
         run: |
           curl -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD \
                -T target/*.war \
-               "$ARTIFACTORY_URL/com.nagarro.dpcode/binaries/$(basename target/*.war)"
+               "$ARTIFACTORY_URL/com.DevOps.pipeline/binaries/$(basename target/*.war)"
 
       - name: Upload WAR file to GitHub
         uses: actions/upload-artifact@v2
