@@ -6,19 +6,16 @@ on:
 jobs:
   checkout:
     name: Checkout
-    runs-on: dpcode
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
   maven_build:
     name: Maven Build
-    runs-on: dpcode
+    runs-on: ubuntu-latest
     needs: checkout
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
@@ -33,12 +30,9 @@ jobs:
 
   unit_test:
     name: Unit Test and Code Coverage
-    runs-on: dpcode
+    runs-on: ubuntu-latest
     needs: maven_build
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
@@ -65,11 +59,11 @@ jobs:
 
   sonar:
     name: Sonar Analysis
-    runs-on: dpcode-1
+    runs-on: ubuntu-latest
     needs: unit_test
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Set up JDK 17
         uses: actions/setup-java@v2
@@ -86,7 +80,8 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           mvn clean verify sonar:sonar \
-          -Dsonar.projectKey=Calculator-java\
+          -Dsonar.projectKey=Calculator \
+          -Dsonar.projectName='Calculator' \
           -Dsonar.sources=src/main/java \
           -Dsonar.tests=src/test/java \
           -Dsonar.java.binaries=target/classes \
@@ -94,11 +89,14 @@ jobs:
 
   upload_to_artifactory:
     name: Upload to Artifactory
-    runs-on: dpcode
+    runs-on: ubuntu-latest
     needs: sonar
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Add Maven to PATH
+        run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
 
       - name: Publish WAR to Artifactory
         env:
@@ -112,11 +110,14 @@ jobs:
 
   docker_build:
     name: Docker Image Build
-    runs-on: dpcode
+    runs-on: ubuntu-latest
     needs: upload_to_artifactory
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Add Maven to PATH
+        run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
 
       - name: Build Docker image
         run: |
@@ -126,11 +127,14 @@ jobs:
 
   docker_push:
     name: Docker Image Push
-    runs-on: dpcode
+    runs-on: ubuntu-latest
     needs: docker_build
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Add Maven to PATH
+        run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
