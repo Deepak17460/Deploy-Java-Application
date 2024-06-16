@@ -1,4 +1,4 @@
-name: Build
+name: Build and Push
 
 on:
   workflow_dispatch:
@@ -17,11 +17,8 @@ jobs:
           distribution: 'adopt'
           java-version: '17'
 
-      - name: Verify Java version
-        run: java -version
-
       - name: Add Maven to PATH
-        run: echo "/opt/maven/bin" >> $GITHUB_PATH
+        run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
 
       - name: Verify Maven installation
         run: mvn -version
@@ -37,7 +34,7 @@ jobs:
         run: |
           curl -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD \
                -T target/*.war \
-               "$ARTIFACTORY_URL/com.nagarro.dpcode/binaries/$(basename target/*.war)"
+               "$ARTIFACTORY_URL/com.DevOps.pipeline//binaries/$(basename target/*.war)"
 
       - name: Upload WAR file to GitHub
         uses: actions/upload-artifact@v2
