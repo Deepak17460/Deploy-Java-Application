@@ -59,7 +59,7 @@ jobs:
         run: |
           curl -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD \
                -T target/*.war \
-               "$ARTIFACTORY_URL/com.DevOps.pipeline//binaries/$(basename target/*.war)"
+               "$ARTIFACTORY_URL/com.DevOps.pipeline/binaries/$(basename target/*.war)"
 
   docker_build:
     name: Docker Image Build
