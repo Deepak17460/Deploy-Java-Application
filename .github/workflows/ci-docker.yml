@@ -23,7 +23,7 @@ jobs:
           java-version: '17'
 
       - name: Add Maven to PATH
-        run: echo "/opt/maven/bin" >> $GITHUB_PATH
+        run: echo "export PATH=/opt/maven/bin:$PATH" >> $GITHUB_ENV
 
       - name: Maven Clean Package
         run: mvn clean package
@@ -40,7 +40,7 @@ jobs:
           java-version: '17'
 
       - name: Add Maven to PATH
-        run: echo "/opt/maven/bin" >> $GITHUB_PATH
+        run: echo "export PATH=/opt/maven/bin:$PATH" >> $GITHUB_ENV
 
       - name: Maven Unit Test
         run: mvn test
