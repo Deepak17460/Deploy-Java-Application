@@ -66,33 +66,30 @@ jobs:
           name: jacoco-report
           path: target/site/jacoco
 
-  sonarqube_analysis:
-    name: SonarQube Analysis
+  sonar:
+    name: Sonar Analysis
     runs-on: dpcode-1
     needs: unit_test
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'adopt'
-          java-version: '17'
-
-      - name: Add Maven to PATH
-        run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
-
-      - name: SonarQube Scanner
+      - name: Sonar Analysis
         env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn sonar:sonar -Dsonar.projectKey=CalculatorMvcProject -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          mvn clean verify sonar:sonar \
+          -Dsonar.projectKey==Calculator \
+          -Dsonar.sources=src/main/java \
+          -Dsonar.tests=src/test/java \
+          -Dsonar.java.binaries=target/classes \
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
   upload_to_artifactory:
     name: Upload to Artifactory
     runs-on: dpcode
-    needs: sonarqube_analysis
+    needs: sonar
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
