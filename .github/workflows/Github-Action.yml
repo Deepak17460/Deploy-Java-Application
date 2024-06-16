@@ -48,8 +48,8 @@ jobs:
       - name: Add Maven to PATH
         run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
 
-      - name: Run Unit Tests with Jacoco
-        run: mvn test jacoco:report
+      - name: Run Unit Tests with Jacoco and Re-Package
+        run: mvn test jacoco:report package
 
   upload_to_artifactory:
     name: Upload to Artifactory
