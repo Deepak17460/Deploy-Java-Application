@@ -16,6 +16,9 @@ jobs:
     runs-on: dpcode
     needs: checkout
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
@@ -73,6 +76,9 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: '17'
+
+      - name: Add Maven to PATH
+        run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
 
       - name: Sonar Analysis
         env:
