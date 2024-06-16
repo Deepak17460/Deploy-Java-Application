@@ -88,9 +88,6 @@ jobs:
           mvn clean verify sonar:sonar \
           -Dsonar.projectKey=Calculator \
           -Dsonar.projectName='Calculator' \
-          -Dsonar.sources=src/main/java \
-          -Dsonar.tests=src/test/java \
-          -Dsonar.java.binaries=target/classes \
           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
   upload_to_artifactory:
