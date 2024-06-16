@@ -28,10 +28,42 @@ jobs:
       - name: Maven Clean Package
         run: mvn clean package
 
+  unit_test:
+    name: Unit Test and Code Coverage
+    runs-on: self-hosted
+    needs: maven_build
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Add Maven to PATH
+        run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
+
+      - name: Run Unit Tests
+        run: mvn test
+
+      - name: Generate JaCoCo Code Coverage Report
+        run: mvn jacoco:report
+
+      - name: Archive Test Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results
+          path: target/surefire-reports
+
+      - name: Archive JaCoCo Code Coverage Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
+
   upload_to_artifactory:
     name: Upload to Artifactory
     runs-on: self-hosted
-    needs: maven_build
+    needs: unit_test
     steps:
       - name: Publish WAR to Artifactory
         env:
