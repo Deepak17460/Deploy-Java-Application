@@ -1,4 +1,4 @@
-name: Build, Unit & Docker
+name: Java-Build & Docker
 
 on:
   workflow_dispatch:
