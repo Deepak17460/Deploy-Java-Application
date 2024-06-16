@@ -65,7 +65,7 @@ jobs:
 
   sonar:
     name: Sonar Analysis
-    runs-on: dpcode-1
+    runs-on: dpcode
     needs: unit_test
     steps:
       - name: Checkout code
@@ -101,15 +101,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Add Maven to PATH
+        run: echo "/opt/apache-maven-3.9.7/bin" >> $GITHUB_PATH
+
+      - name: Maven Clean Package
+        run: mvn clean package
+
+      - name: Export Java Path
+        run: |
+          export JAVA_HOME="${RUNNER_TEMP}/_temp/adopt@17.0.2-adopt"
+
       - name: Publish WAR to Artifactory
         env:
           ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL }}
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         run: |
+          war_file=$(find target -name "*.war" -print -quit)
+          if [[ -z "$war_file" ]]; then
+            echo "No WAR file found in target directory"
+            exit 1
+          fi
           curl -u $ARTIFACTORY_USERNAME:$ARTIFACTORY_PASSWORD \
-               -T target/*.war \
-               "$ARTIFACTORY_URL/com.DevOps.pipeline/binaries/$(basename target/*.war)"
+               -T $war_file \
+               "$ARTIFACTORY_URL/com.DevOps.pipeline/binaries/$(basename $war_file)"
 
   docker_build:
     name: Docker Image Build
